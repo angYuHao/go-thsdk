@@ -5,27 +5,38 @@ import (
 	"encoding/json"
 	"os"
 	"path/filepath"
+	"runtime"
 	"testing"
 	"time"
 
 	thsdk "github.com/angYuHao/go-thsdk"
 )
 
-// TestMain stages the runtime component in the working directory so a checkout
-// with native/hq.* present can run without extra configuration.
+// TestMain stages the runtime component in a temp file so a checkout with the
+// component under libs/<os>/<arch>/ runs without extra configuration.
 func TestMain(m *testing.M) {
 	if os.Getenv("THSDK_RUNTIME_PATH") == "" {
-		for _, name := range []string{"hq.dll", "hq.so", "hq.dylib"} {
-			if source, err := os.Stat(filepath.Join("native", name)); err == nil && !source.IsDir() {
-				target := filepath.Join(os.TempDir(), "go-thsdk-"+name)
-				if err := copyFile(filepath.Join("native", name), target); err == nil {
-					os.Setenv("THSDK_RUNTIME_PATH", target)
-				}
-				break
-			}
+		if target, ok := stageRuntime(); ok {
+			_ = os.Setenv("THSDK_RUNTIME_PATH", target)
 		}
 	}
 	os.Exit(m.Run())
+}
+
+func stageRuntime() (string, bool) {
+	name := map[string]string{"windows": "hq.dll", "darwin": "hq.dylib", "linux": "hq.so"}[runtime.GOOS]
+	if name == "" {
+		return "", false
+	}
+	candidate := filepath.Join("libs", runtime.GOOS, runtime.GOARCH, name)
+	if info, err := os.Stat(candidate); err != nil || info.IsDir() {
+		return "", false
+	}
+	dest := filepath.Join(os.TempDir(), "go-thsdk-"+name)
+	if err := copyFile(candidate, dest); err != nil {
+		return "", false
+	}
+	return dest, true
 }
 
 func copyFile(source, target string) error {

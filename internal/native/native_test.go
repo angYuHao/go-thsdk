@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"os"
 	"path/filepath"
+	"runtime"
 	"testing"
 
 	"github.com/angYuHao/go-thsdk/internal/native"
@@ -13,7 +14,8 @@ func runtimePath(t *testing.T) string {
 	t.Helper()
 	path := os.Getenv("THSDK_RUNTIME_PATH")
 	if path == "" {
-		path = filepath.Join("..", "..", "native", "hq.dll")
+		name := map[string]string{"windows": "hq.dll", "darwin": "hq.dylib", "linux": "hq.so"}[runtime.GOOS]
+		path = filepath.Join("..", "..", "libs", runtime.GOOS, runtime.GOARCH, name)
 	}
 	if _, err := os.Stat(path); err != nil {
 		t.Skipf("runtime component not available: %v", err)

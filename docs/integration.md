@@ -29,8 +29,8 @@ internal/native ──CallAlloc(json)──▶ hq.*  ──TCP──▶  同花�
 ```bash
 pip download --no-deps --no-binary :all: thsdk -d ./_pkg
 tar -xzf _pkg/thsdk-*.tar.gz -C _pkg
-mkdir -p native
-cp _pkg/thsdk-*/thsdk/libs/windows/amd64/hq.dll ./native/   # 按平台换一个
+mkdir -p libs
+cp -r _pkg/thsdk-*/thsdk/libs/* ./libs/   # 整包复制，SDK 按当前平台取用
 ```
 
 | 平台 | 文件 |
@@ -45,8 +45,8 @@ cp _pkg/thsdk-*/thsdk/libs/windows/amd64/hq.dll ./native/   # 按平台换一个
 
 1. `Options.RuntimePath`
 2. 环境变量 `THSDK_RUNTIME_PATH`
-3. 可执行文件同级：`hq.*`、`libs/<os>/<arch>/hq.*`、`native/hq.*`
-4. 工作目录同级：`native/hq.*`、`hq.*`、`libs/<os>/<arch>/hq.*`
+3. 可执行文件同级：`hq.*`、`libs/<os>/<arch>/hq.*`
+4. 工作目录同级：`libs/<os>/<arch>/hq.*`、`hq.*`
 5. 裸文件名交给系统加载器（`PATH` / `LD_LIBRARY_PATH`）
 
 部署时建议**显式传 `RuntimePath`**，别依赖 cwd——守护进程的工作目录经常不是你以为的那个。

@@ -8,7 +8,10 @@ import (
 	"strings"
 )
 
-// ComponentFileNames maps GOOS to the runtime component's file name.
+// componentFileNames maps GOOS to the runtime component's file name.
+//
+// The Python SDK keeps the component under thsdk/libs/<os>/<arch>/; this port
+// mirrors that layout so a copied libs/ tree just works.
 var componentFileNames = map[string]string{
 	"windows": "hq.dll",
 	"darwin":  "hq.dylib",
@@ -21,9 +24,9 @@ const EnvRuntimePath = "THSDK_RUNTIME_PATH"
 
 // resolveComponent finds the native runtime component.
 //
-// Order: explicit option, THSDK_RUNTIME_PATH, <family>/<arch> next to the
-// executable, libs/<family>/<arch> next to the executable, the file next to the
-// working directory, and finally whatever the OS loader can find by name.
+// Order: explicit option, THSDK_RUNTIME_PATH, the file next to the executable,
+// libs/<os>/<arch> next to the executable, libs/<os>/<arch> in the working
+// directory, and finally whatever the OS loader can find by name.
 func resolveComponent(explicit string) (string, error) {
 	if explicit != "" {
 		return expandHome(explicit)
@@ -49,15 +52,13 @@ func resolveComponent(explicit string) (string, error) {
 		candidates = append(candidates,
 			filepath.Join(dir, name),
 			filepath.Join(dir, "libs", familyForGOOS(), arch, name),
-			filepath.Join(dir, "native", name),
 		)
 	}
 	cwd, err := os.Getwd()
 	if err == nil {
 		candidates = append(candidates,
-			filepath.Join(cwd, "native", name),
-			filepath.Join(cwd, name),
 			filepath.Join(cwd, "libs", familyForGOOS(), arch, name),
+			filepath.Join(cwd, name),
 		)
 	}
 	for _, candidate := range candidates {

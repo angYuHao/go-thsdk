@@ -84,16 +84,18 @@ go get github.com/angYuHao/go-thsdk
 ```bash
 pip download --no-deps --no-binary :all: thsdk -d ./_pkg
 tar -xzf _pkg/thsdk-*.tar.gz -C _pkg
-mkdir -p native
-cp _pkg/thsdk-*/thsdk/libs/windows/amd64/hq.dll ./native/
+mkdir -p libs/windows/amd64
+cp _pkg/thsdk-*/thsdk/libs/windows/amd64/hq.dll ./libs/windows/amd64/
 ```
+
+也可以直接复制整包 `libs/` 目录（含 linux/darwin 各架构），SDK 按当前平台取用。
 
 SDK 按以下顺序查找组件，命中第一个即用：
 
 1. `Options.RuntimePath`
 2. 环境变量 `THSDK_RUNTIME_PATH`
-3. 可执行文件同级：`hq.dll`、`libs/windows/amd64/hq.dll`、`native/hq.dll`
-4. 工作目录同级：`native/hq.dll`、`hq.dll`、`libs/windows/amd64/hq.dll`
+3. 可执行文件同级：`hq.dll`、`libs/windows/amd64/hq.dll`
+4. 工作目录同级：`libs/windows/amd64/hq.dll`、`hq.dll`
 5. 交给系统加载器（`PATH`）
 
 部署时建议显式传 `RuntimePath`，不要依赖工作目录。
@@ -291,7 +293,7 @@ go run ./examples/allmethods -writes  # 追加 10 个账号写方法（会改动
 ```bash
 go build ./...
 go test -short ./...   # 离线契约测试与 HTTP 路由测试，不访问服务
-go test ./...          # 追加真实请求（需要 native/hq.dll）
+go test ./...          # 追加真实请求（需要 libs/windows/amd64/hq.dll）
 ```
 
 CI 在 `windows-latest` 上跑 `gofmt`、`go build ./...` 与 `go test -short ./...`，
