@@ -100,6 +100,39 @@ func TestMethodsRouteShape(t *testing.T) {
 	}
 }
 
+func TestWriteMethodsAppearWhenEnabled(t *testing.T) {
+	server := &Server{
+		config:  Config{AllowWrites: true},
+		catalog: methodCatalog(),
+	}
+	recorder := httptest.NewRecorder()
+	server.handleMethods(recorder, httptest.NewRequest(http.MethodGet, "/v1/methods", nil))
+
+	var payload struct {
+		Count   int           `json:"count"`
+		Writes  bool          `json:"writes"`
+		Methods []methodEntry `json:"methods"`
+	}
+	if err := json.Unmarshal(recorder.Body.Bytes(), &payload); err != nil {
+		t.Fatalf("decode: %v", err)
+	}
+	if !payload.Writes {
+		t.Error("writes flag should be true")
+	}
+	if payload.Count != 80 {
+		t.Errorf("count = %d, want 80", payload.Count)
+	}
+	writes := 0
+	for _, entry := range payload.Methods {
+		if entry.Write {
+			writes++
+		}
+	}
+	if writes != 10 {
+		t.Errorf("write entries = %d, want 10", writes)
+	}
+}
+
 func TestCallRejectsUnknownAndWriteMethods(t *testing.T) {
 	server := &Server{
 		config:   Config{},
