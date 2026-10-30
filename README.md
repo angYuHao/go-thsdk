@@ -1,9 +1,18 @@
 # go-thsdk
 
-同花顺行情数据的 Go SDK。上游 [panghu11033/thsdk](https://github.com/panghu11033/thsdk)
-是 Python 层封装，数据能力来自随包分发的 c-shared 组件（`hq.dll`）。本项目用纯 Go
-直接调用该组件的 `CallAlloc` / `FreeResult` JSON ABI，不依赖 Python，数据权限、限频
-规则和会话文件格式与 Python 版保持一致。
+[![Go Reference](https://pkg.go.dev/badge/github.com/angYuHao/go-thsdk.svg)](https://pkg.go.dev/github.com/angYuHao/go-thsdk)
+[![Go Version](https://img.shields.io/github/go-mod/go-version/angYuHao/go-thsdk)](go.mod)
+[![Latest Tag](https://img.shields.io/github/v/tag/angYuHao/go-thsdk)](https://github.com/angYuHao/go-thsdk/tags)
+![Platform](https://img.shields.io/badge/platform-Windows%20amd64-blue)
+
+同花顺行情数据的纯 Go SDK：直接调用原生组件 `hq.dll` 的 JSON ABI，覆盖 80 个原生
+方法——实时与历史行情、证券与板块、资讯事件、排行统计、问财选股与自选股管理；
+既能作为标准库被 `import`，也能一行命令启动成 HTTP 服务。
+
+上游 [panghu11033/thsdk](https://github.com/panghu11033/thsdk) 是 Python 层封装，
+数据能力来自随包分发的 c-shared 组件（`hq.dll`）。本项目用纯 Go 直接调用该组件的
+`CallAlloc` / `FreeResult` JSON ABI，不依赖 Python，数据权限、限频规则和会话文件
+格式与 Python 版保持一致。
 
 ```
 Go SDK ──JSON──▶ hq.dll ──▶ 同花顺行情网关
@@ -11,6 +20,26 @@ Go SDK ──JSON──▶ hq.dll ──▶ 同花顺行情网关
 
 **当前实测平台：Windows amd64。** 80 个原生方法全部发过真实请求：70 个只读方法
 用真实账号验证，10 个账号写方法在试用账号上逐条回读校验。
+
+## 目录
+
+- [能力范围](#能力范围)
+- [实测结果](#实测结果)
+- [环境要求](#环境要求)
+- [安装](#安装)
+- [快速开始](#快速开始)
+- [认证](#认证)
+- [标准层](#标准层)
+- [便捷层](#便捷层)
+- [HTTP 服务](#http-服务)
+- [数据约定（已实测）](#数据约定已实测)
+- [进程行为](#进程行为)
+- [已知的上游限制](#已知的上游限制)
+- [示例](#示例)
+- [测试](#测试)
+- [文档](#文档)
+- [版本](#版本)
+- [许可](#许可)
 
 ## 能力范围
 
@@ -265,10 +294,24 @@ go test -short ./...   # 离线契约测试与 HTTP 路由测试，不访问服�
 go test ./...          # 追加真实请求（需要 native/hq.dll）
 ```
 
+CI 在 `windows-latest` 上跑 `gofmt`、`go build ./...` 与 `go test -short ./...`，
+见 [.github/workflows/ci.yml](.github/workflows/ci.yml)。离线用例不需要 `hq.dll`，
+所以 CI 不需要凭据也不会外呼。
+
 ## 文档
 
 - [接入指南](docs/integration.md)：组件准备、登录、数据约定、限流、错误分类、上线自查
 - [API 参考](docs/api-reference.md)：80 个标准方法与 12 个便捷方法的签名与返回形态
+
+## 版本
+
+| 版本 | 内容 |
+| --- | --- |
+| `v0.1.0` | 首个可用版本：80 个原生方法、便捷层、接入指南与 API 参考、HTTP 服务 |
+
+查看全部标签：<https://github.com/angYuHao/go-thsdk/tags>
+
+版本号遵循语义化版本：`v0.x` 期间 API 仍可能微调，`v1.0.0` 之后不再破坏兼容。
 
 ## 许可
 
