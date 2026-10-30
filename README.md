@@ -188,6 +188,65 @@ news, err := client.News(ctx, 1, 20, "")
 | `list_security_call_auction_quotes` 对部分历史日期返回 `encode_failed` | 上游对该日响应编码失败；换当天日期可正常返回 |
 | 盘口、逐笔、依赖当日快照的接口间歇 `no_data` / `encode_failed` | 非交易时段或当日数据未就绪 |
 
+## HTTP 服务
+
+同一份代码既能当标准库用，也能直接跑成一个 HTTP 服务。服务端只是 `thsdk.Client`
+的一层薄包装，路由可直接挂到已有应用里。
+
+```bash
+go run ./cmd/thsdk-server                        # 默认 127.0.0.1:8765
+go run ./cmd/thsdk-server -addr :9000 -allow-writes
+```
+
+| 端点 | 说明 |
+| --- | --- |
+| `GET /healthz` | 存活状态、是否已认证、当前可用方法数 |
+| `GET /v1/methods` | 方法目录（名称、类别、是否写方法） |
+| `POST /v1/call/<method>` | 调用一个方法，请求体即该方法的参数对象 |
+
+```bash
+curl http://127.0.0.1:8765/healthz
+
+curl -X POST http://127.0.0.1:8765/v1/call/list_security_k_lines \
+  -d '{"security":{"code":"600519","market":"USHA"},"start":-3,"end":0,"adjust":1,"period":16384}'
+```
+
+请求体为空或 `null` 表示无参数。响应直接是组件返回的 `data`，不做包装。
+错误统一为 `{"error":{"code":...,"message":...}}`，HTTP 状态按类型映射：
+
+| 上游错误 | HTTP |
+| --- | --- |
+| `invalid_request` / 本地参数错误 | 400 |
+| 未知方法 | 404 |
+| `permission_denied` / `no_permission` | 403 |
+| 写方法未开启 | 403 |
+| `no_data` | 404 |
+| `rate_limited` | 429 |
+| `timeout` / `query_failed` | 504 |
+| 未认证 / `session_unavailable` | 503 |
+| 其它组件业务错误 | 502 |
+
+**写方法默认关闭**：10 个账号写方法只有在 `-allow-writes`（库层为
+`Config.AllowWrites`）下才会注册，否则返回 403。服务默认只监听 `127.0.0.1`，
+对外暴露前请自行加上认证和 TLS。
+
+在已有应用里挂载：
+
+```go
+handler, err := httpserver.New(httpserver.Config{
+    Client:      client,          // 已认证的 *thsdk.Client
+    AllowWrites: false,
+    CallTimeout: 30 * time.Second,
+})
+if err != nil {
+    return err
+}
+mux.Handle("/thsdk/", http.StripPrefix("/thsdk", handler.Handler()))
+```
+
+命令行参数：`-addr`、`-runtime`、`-session-dir`、`-allow-writes`、`-no-temporary`、
+`-call-timeout`、`-auth-timeout`、`-shutdown-timeout`。
+
 ## 示例
 
 ```bash
@@ -202,7 +261,7 @@ go run ./examples/allmethods -writes  # 追加 10 个账号写方法（会改动
 
 ```bash
 go build ./...
-go test -short ./...   # 离线契约测试，不访问服务
+go test -short ./...   # 离线契约测试与 HTTP 路由测试，不访问服务
 go test ./...          # 追加真实请求（需要 native/hq.dll）
 ```
 
