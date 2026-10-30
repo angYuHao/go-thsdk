@@ -1,0 +1,13 @@
+native/
+libs/
+_pkg/
+
+*.session
+account.session
+
+scratch/
+*.log
+*.exe
+*.test
+coverage.out
+.DS_Store
