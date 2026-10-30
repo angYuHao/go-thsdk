@@ -1,11 +1,11 @@
-native/
-libs/
-_pkg/
+/native/
+/libs/
+/_pkg/
 
 *.session
 account.session
 
-scratch/
+/scratch/
 *.log
 *.exe
 *.test
